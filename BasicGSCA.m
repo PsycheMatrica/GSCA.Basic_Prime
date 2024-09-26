@@ -1,6 +1,6 @@
 function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% BasicGSCA() - MATLAB function to perform a basic version of Generalzied %
+% BasicGSCA() - MATLAB function to perform a basic version of Generalized %
 %               Structured Component Analysis (GSCA).                     %
 % Author: Gyeongcheol Cho                                                 %
 % Last Revision Date: September 26, 2024                                  % 
