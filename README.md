@@ -1,6 +1,6 @@
 # BasicGSCA_Prime
 
-## Version 1.0.0
+## Version 1.1.0
 
 ### Author:
 Gyeongcheol Cho
@@ -12,6 +12,7 @@ Gyeongcheol Cho
 - Estimate GSCA model parameters and calculate their standard errors (SE) along with 95% confidence intervals (CI).
 - Assess model performance based on both explanatory and predictive power.
 - Compute the PET (Predictor Exclusion Threshold) statistic to evaluate the predictive power of individual predictor components.
+- Enable parallel computing for bootstrap sampling.
 
 ## Installation:
 To use this package in MATLAB:
@@ -35,5 +36,5 @@ To use this package in MATLAB:
 - If you use **BasicGSCA_Prime** in your research or publications, please cite it in APA format as follows:
 
 ```plaintext
-Cho, G. (2024). BasicGSCA_Prime: A package for basic generalized structured component analysis (Version 1.0.0) [Computer software]. GitHub. https://github.com/GyeongcheolCho/BasicGSCA_Prime
+Cho, G. (2024). BasicGSCA_Prime: A package for basic generalized structured component analysis (Version 1.1.0) [Computer software]. GitHub. https://github.com/GyeongcheolCho/BasicGSCA_Prime
 ```
