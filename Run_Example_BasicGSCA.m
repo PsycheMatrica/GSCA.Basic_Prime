@@ -34,8 +34,8 @@ B0=[0 1 1 1 0 0;...
 N_Boot=1000;
 Max_iter = 1000;
 Min_limit = 10^(-8);
-Flag_Parallel = true;
-[INI,TABLE,ETC]=BasicGSCA(Data{:,:},W0,C0,B0,N_Boot,Max_iter,Min_limit);
+Flag_Parallel = false;
+[INI,TABLE,ETC]=BasicGSCA(Data{:,:},W0,C0,B0,N_Boot,Max_iter,Min_limit,Flag_Parallel);
 INI
 INI.GoF
 INI.W

@@ -1,4 +1,4 @@
-function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit)
+function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Parallel)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BasicGSCA() - MATLAB function to perform a basic version of Generalized %
 %               Structured Component Analysis (GSCA).                     %
@@ -19,7 +19,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit)
 %   Flag_Parallel = Logical value to determine whether to use parallel    %
 %                   computing for bootstrapping                           %
 % Output arguments:                                                       %
-%   INI: Strucutre array containing goodness-of-fit values, R-squared     % 
+%   INI: Structure array containing goodness-of-fit values, R-squared     % 
 %        values, and matrices parameter estimates                         %
 %     .GoF = [FIT_D,   OPE_D;                                             %
 %             FIT_M_D, OPE_M_D;                                           %
@@ -36,13 +36,22 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit)
 %     .W: Table for weight estimates                                      %
 %     .C: Table for loading estimates                                     %
 %     .B: Table for path coefficients estimates                           %
-%  ETC: a structure array including bootstrapped parameter estmates       %
+%  ETC: Structure array including bootstrapped parameter estmates       %
 %     .W_Boot: Matrix of bootstrapped weight estimates                    %
 %     .C_Boot: Matrix of bootstrapped loading estimates                   %
 %     .B_Boot: Matrix of bootstrapped path coefficient estimates          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% (1) Preliminary stage
+    if nargin<8; Flag_Parallel=false;
+        if nargin<7; Min_limit=10^(-8); 
+            if nargin<6; Max_iter=1000; 
+                if nargin<5; N_Boot=0; 
+                end
+            end
+        end
+    end
+
     Z=Data;  
     [N,J]=size(Z);
     P=size(B,1);
@@ -135,6 +144,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit)
             end
         else
             for b=1:N_Boot
+                if rem(b,100)==1; fprintf("Bootstrapping %d\n", b); end
                 [Z_ib,Z_oob]=GC_Boot(Z);
                 mean_Z_ib=mean(Z_ib);
                 std_Z_ib=std(Z_ib,1);
