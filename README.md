@@ -1,6 +1,6 @@
 # BasicGSCA_Prime
 
-## Version 1.0.0
+## Version 1.1.0
 
 ### Author:
 Gyeongcheol Cho
@@ -12,6 +12,7 @@ Gyeongcheol Cho
 - Estimate GSCA model parameters and calculate their standard errors (SE) along with 95% confidence intervals (CI).
 - Assess model performance based on both explanatory and predictive power.
 - Compute the PET (Predictor Exclusion Threshold) statistic to evaluate the predictive power of individual predictor components.
+- Enable parallel computing for bootstrap sampling.
 
 ## Installation:
 To use this package in MATLAB:
