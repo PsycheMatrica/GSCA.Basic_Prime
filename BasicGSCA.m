@@ -95,9 +95,9 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
       
 %% (4) Estimation parameters for N_Boot
     if N_Boot<100
-        TABLE.W=[];
-        TABLE.C=[];
-        TABLE.B=[];
+        TABLE.W=[est_W(W0),NaN(Nw,5)];
+        TABLE.C=[est_C(C0),NaN(Nc,5)];
+        TABLE.B=[est_B(B0),NaN(Nb,5)];
         ETC=[];
     else
         W_Boot=zeros(Nw,N_Boot);
