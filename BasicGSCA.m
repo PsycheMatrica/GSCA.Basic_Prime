@@ -80,9 +80,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
         W(W0)=1;
 %% (3) Estimation of paramters
     [est_W,est_C,est_B,vec_err]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
-    INI.W=est_W;
-    INI.C=est_C;
-    INI.B=est_B;
+
     R_squared_dep=ones(1,Ty)-vec_err;
     R_squared=zeros(1,T);
     R_squared(1,ind_Adep)=R_squared_dep;
@@ -92,6 +90,10 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
     INI.GoF=Eval;
     INI.R2_m = R_squared(1,[ind_Cdep,false(1,P)]);
     INI.R2_s = R_squared(1,[false(1,J),ind_Bdep]);
+    
+    INI.W=est_W;
+    INI.C=est_C;
+    INI.B=est_B;
       
 %% (4) Estimation parameters for N_Boot
     if N_Boot<100
