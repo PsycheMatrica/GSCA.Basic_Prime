@@ -1,9 +1,9 @@
-function [W,C,B,vec_err]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep)
+function [W,C,B,vec_err,Flag_Converge,iter]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ALS_Basic() - MATLAB function to implement the basic ALS algorithm for  %
 %               Generalized Structured Component Analysis (GSCA).         %
 % Author: Gyeongcheol Cho                                                 %
-% Last Revision Date: September 26, 2024                                  % 
+% Last Revision Date: October 1, 2024                                     % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Set initial value    
@@ -89,9 +89,16 @@ function [W,C,B,vec_err]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,
         dif_c=sum(vec_err,2);   
         improve=dif_p-dif_c; % sum(error_past^2) - sum(error_current^2) 
      end  
+     Flag_Converge=true;
+     if (iter == Max_iter) && (improve > Min_limit); Flag_Converge=false; end
      C=A(:,1:J);
      B=A(:,(J+1):T);
-     if Jy>0
+     if Flag_C_Forced
+        for j=1:J
+            CVx = CV(:,C0_post(:,j));
+            C(C0_post(:,j),j)=(CVx'*CVx)\(CVx'*Z(:,j));
+        end
+     elseif Jy>0
          for j=loc_Cdep
              CVx = CV(:,C0(:,j));
              C(C0(:,j),j)=(CVx'*CVx)\(CVx'*Z(:,j));
@@ -103,4 +110,6 @@ function [W,C,B,vec_err]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,
              B(B0(:,q),q)=(CVx'*CVx)\(CVx'*CV(:,q)); 
          end
      end
+     ERROR=[Z CV] - CV*[C,B];
+     vec_err=sum(ERROR(:,ind_Adep_post).^2,1);   
 end
