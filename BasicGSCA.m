@@ -1,9 +1,9 @@
-function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Parallel)
+function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BasicGSCA() - MATLAB function to perform a basic version of Generalized %
 %               Structured Component Analysis (GSCA).                     %
 % Author: Gyeongcheol Cho                                                 %
-% Last Revision Date: September 26, 2024                                  % 
+% Last Revision Date: October 1, 2024                                     % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input arguments:                                                        %
 %   Data = an N by J matrix of scores for N individuals on J indicators   %
@@ -12,10 +12,17 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
 %   B = a P by P matrix of path coefficients                              %
 %   N_Boot = Integer representing the number of bootstrap samples for     %
 %            calculating standard errors (SE) and 95% confidence          %
-%            intervals (CI).                                              %
+%            intervals (CI)                                               %
 %   Max_iter = Maximum number of iterations for the Alternating Least     % 
 %              Squares (ALS) algorithm                                    %
 %   Min_limit = Tolerance level for ALS algorithm                         %
+%   Flag_C_Forced = Logical value to determine whether to force loadings  %
+%                   for canonical components to be estimated. It won't    %
+%                   change overall results but additionally allows for    %
+%                   estimating loadings for canonical components if some  %
+%                   of the components are canonical. If every component   %
+%                   is nomological, the results remain unchanged          %
+%                   regardless of its value.                              %
 %   Flag_Parallel = Logical value to determine whether to use parallel    %
 %                   computing for bootstrapping                           %
 % Output arguments:                                                       %
@@ -24,6 +31,9 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
 %     .GoF = [FIT_D,   OPE_D;                                             %
 %             FIT_M_D, OPE_M_D;                                           %
 %             FIT_S_D, OPE_S_D];                                          %
+%     .Converge = Logical value indicating whether the ALS algorithm      %
+%                 converges within the maximum number of iterations       %
+%     .iter = Number of iterations for the ALS algorithm                  %
 %     .R2m = Vector of R-squared values for dependent variables           %
 %               in the measurement model                                  %
 %     .R2s = Vector of R-squared values for dependent variables           %
@@ -36,7 +46,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
 %     .W: Table for weight estimates                                      %
 %     .C: Table for loading estimates                                     %
 %     .B: Table for path coefficients estimates                           %
-%  ETC: Structure array including bootstrapped parameter estmates       %
+%  ETC: Structure array including bootstrapped parameter estmates         %
 %     .W_Boot: Matrix of bootstrapped weight estimates                    %
 %     .C_Boot: Matrix of bootstrapped loading estimates                   %
 %     .B_Boot: Matrix of bootstrapped path coefficient estimates          %
@@ -60,11 +70,14 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
     % index
     W0=W~=0; Nw=sum(sum(W0,1),2);
     C0=C~=0; Nc=sum(sum(C0,1),2);
+    if Flag_C_Forced; C0_post=W0'; Nc_post=Nw;
+    else; C0_post= C0; Nc_post=Nc;
+    end
     B0=B~=0; Nb=sum(sum(B0,1),2);
     B0=B~=0;
-    ind_Cdep=sum(C0,1)>0; Jy = sum(ind_Cdep,2); loc_Cdep=find(ind_Cdep);
-    ind_Bdep=sum(B0,1)>0; Py = sum(ind_Bdep,2); loc_Bdep=find(ind_Bdep); Ty = Jy+Py;
-    ind_Adep=[ind_Cdep, ind_Bdep];
+    ind_Cdep=sum(C0,1)>0; Jy = sum(ind_Cdep,2); loc_Cdep=find(ind_Cdep); ind_Cdep_post=sum(C0_post,1)>0;
+    ind_Bdep=sum(B0,1)>0; Py = sum(ind_Bdep,2); loc_Bdep=find(ind_Bdep); Ty = Jy+Py; Ty_post=sum(ind_Cdep_post,2)+Py;
+    ind_Adep=[ind_Cdep, ind_Bdep]; ind_Adep_post=[ind_Cdep_post, ind_Bdep];
     loc_w_t=cell(1,P);
     loc_b_t=cell(1,P);
     for p=1:P
@@ -79,16 +92,18 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
     % Setting the intital values for A,W    
         W(W0)=1;
 %% (3) Estimation of paramters
-    [est_W,est_C,est_B,vec_err]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+    [est_W,est_C,est_B,vec_err,Flag_Converge,iter]=ALS_Basic(Z,W,W0,C0,B0,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
 
-    R_squared_dep=ones(1,Ty)-vec_err;
+    R_squared_dep=ones(1,Ty_post)-vec_err;
     R_squared=zeros(1,T);
-    R_squared(1,ind_Adep)=R_squared_dep;
+    R_squared(1,ind_Adep_post)=R_squared_dep;
     Eval=[mean(R_squared(1,[ind_Cdep,ind_Bdep])),NaN; %% FIT_D
           mean(R_squared(1,[ind_Cdep,false(1,P)])),NaN; %% FIT_M_D    
           mean(R_squared(1,[false(1,J),ind_Bdep])),NaN]; %% FIT_S_D
     INI.GoF=Eval;
-    INI.R2_m = R_squared(1,[ind_Cdep,false(1,P)]);
+    INI.Converge=Flag_Converge;
+    INI.iter=iter;
+    INI.R2_m = R_squared(1,[ind_Cdep_post,false(1,P)]);
     INI.R2_s = R_squared(1,[false(1,J),ind_Bdep]);
     
     INI.W=est_W;
@@ -98,12 +113,14 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
 %% (4) Estimation parameters for N_Boot
     if N_Boot<100
         TABLE.W=[est_W(W0),NaN(Nw,5)];
-        TABLE.C=[est_C(C0),NaN(Nc,5)];
+        TABLE.C=[est_C(C0_post),NaN(Nc,5)];
         TABLE.B=[est_B(B0),NaN(Nb,5)];
-        ETC=[];
+        ETC.W_Boot=[];
+        ETC.C_Boot=[];
+        ETC.B_Boot=[];  
     else
         W_Boot=zeros(Nw,N_Boot);
-        C_Boot=zeros(Nc,N_Boot);
+        C_Boot=zeros(Nc_post,N_Boot);
         B_Boot=zeros(Nb,N_Boot);
         delOPE_c_Boot=zeros(Nc,N_Boot);
         delOPE_b_Boot=zeros(Nb,N_Boot);
@@ -113,9 +130,9 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
                 [Z_ib,Z_oob]=GC_Boot(Z);
                 mean_Z_ib=mean(Z_ib);
                 std_Z_ib=std(Z_ib,1);
-                [W_b,C_b,B_b,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
                 W_Boot(:,b)=W_b(W0);
-                C_Boot(:,b)=C_b(C0);
+                C_Boot(:,b)=C_b(C0_post);
                 B_Boot(:,b)=B_b(B0);
         
             %   (4) Predictabiliy 
@@ -150,9 +167,9 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
                 [Z_ib,Z_oob]=GC_Boot(Z);
                 mean_Z_ib=mean(Z_ib);
                 std_Z_ib=std(Z_ib,1);
-                [W_b,C_b,B_b,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_Adep,Min_limit,Max_iter,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
                 W_Boot(:,b)=W_b(W0);
-                C_Boot(:,b)=C_b(C0);
+                C_Boot(:,b)=C_b(C0_post);
                 B_Boot(:,b)=B_b(B0);
         
             %   (4) Predictabiliy 
@@ -194,7 +211,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,N_Boot,Max_iter,Min_limit,Flag_Par
           
     % basic statistics for parameter
         TABLE.W=para_stat(est_W(W0),W_Boot,loc_CI,[]);
-        if Jy>0; TABLE.C=para_stat(est_C(C0),C_Boot,loc_CI,delOPE_c_Boot); end
+        if (Jy>0)||Flag_C_Forced; TABLE.C=para_stat(est_C(C0_post),C_Boot,loc_CI,delOPE_c_Boot); end
         if Py>0; TABLE.B=para_stat(est_B(B0),B_Boot,loc_CI,delOPE_b_Boot); end
         ETC.W_Boot=W_Boot;
         ETC.C_Boot=C_Boot;
