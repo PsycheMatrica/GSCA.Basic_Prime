@@ -93,7 +93,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
     % Setting the intital values for A,W    
         W(W0)=1;
 %% (3) Estimation of paramters
-    [est_W,est_C,est_B,vec_err,Flag_Converge,iter]=ALS_Basic(Z,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);      
+    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,CVscore]=ALS_Basic(Z,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);      
     R_squared_dep=ones(1,Ty_post)-vec_err;
     R_squared=zeros(1,T);
     R_squared(1,ind_Adep_post)=R_squared_dep;
@@ -109,6 +109,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
     INI.W=est_W;
     INI.C=est_C;
     INI.B=est_B;
+    INI.CVscore=CVscore*sqrt(N);
       
 %% (4) Estimation parameters for N_Boot
     if N_Boot<100
@@ -130,7 +131,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
                 [Z_ib,Z_oob]=GC_Boot(Z);
                 mean_Z_ib=mean(Z_ib);
                 std_Z_ib=std(Z_ib,1);
-                [W_b,C_b,B_b,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
                 B_Boot(:,b)=B_b(B0);
@@ -167,7 +168,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
                 [Z_ib,Z_oob]=GC_Boot(Z);
                 mean_Z_ib=mean(Z_ib);
                 std_Z_ib=std(Z_ib,1);
-                [W_b,C_b,B_b,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
                 B_Boot(:,b)=B_b(B0);
