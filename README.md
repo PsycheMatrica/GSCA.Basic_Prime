@@ -1,7 +1,5 @@
 # BasicGSCA_Prime
 
-## Version 1.2.0
-
 ### Author:
 Gyeongcheol Cho
 
@@ -13,6 +11,7 @@ Gyeongcheol Cho
 - Assess model performance based on both explanatory and predictive power.
 - Compute the PET (Predictor Exclusion Threshold) statistic to evaluate the predictive power of individual predictor components.
 - Enable parallel computing for bootstrap sampling.
+- Allow users to determine sign-fixing indicators for components.
 
 ## Installation:
 To use this package in MATLAB:

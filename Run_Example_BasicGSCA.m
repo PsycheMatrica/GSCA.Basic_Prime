@@ -1,7 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Illustration for BasicGSCA Prime package                                %
 %   Author: Gyeongcheol Cho                                               %
-%   Last Revision Date: October 1, 2024                                   %  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Description:                                                            %
 %   - This code aims to illustrate how to use BasicGSCA Prime package.    %
@@ -33,12 +32,13 @@ B0=[0 1 1 1 0 0;...
     0 0 0 0 1 1;...
     0 0 0 0 0 1;...
     0 0 0 0 0 0];
+ind_sign=[1,4,7,9,12,13];
 N_Boot=1000;
 Max_iter = 1000;
 Min_limit = 10^(-8);
 Flag_C_Forced = true;
 Flag_Parallel = false;
-[INI,TABLE,ETC]=BasicGSCA(Data{:,:},W0,C0,B0,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel);
+[INI,TABLE,ETC]=BasicGSCA(Data{:,:},W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel);
 INI
 INI.GoF
 INI.Converge
