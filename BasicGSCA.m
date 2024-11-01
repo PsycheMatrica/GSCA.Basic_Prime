@@ -42,6 +42,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
 %     .W: a J by P matrix of weight estimates                             %
 %     .C: a P by J matrix of loading estimates                            %
 %     .B: a P by P matrix of path coefficient estimates                   %
+%     .CVscore: an N by P matrix of component scores                      %
 %  TABLE: Structure array containing tables of parameter estimates, their %
 %         SEs, 95% CIs,and other statistics                               %
 %     .W: Table for weight estimates                                      %
