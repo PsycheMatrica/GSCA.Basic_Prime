@@ -1,10 +1,10 @@
-# BasicGSCA_Prime
+# GSCA.Basic_Prime
 
 ### Author:
 Gyeongcheol Cho
 
 ## Description:
-- The **BasicGSCA_Prime** package enables users to estimate and evaluate basic GSCA models.
+- The **GSCA.Basic_Prime** package enables users to estimate and evaluate basic GSCA models.
 
 ## Features:
 - Estimate GSCA model parameters and calculate their standard errors (SE) along with 95% confidence intervals (CI).
@@ -17,11 +17,11 @@ Gyeongcheol Cho
 To use this package in MATLAB:
 1. Clone or download the repository:
    ```bash
-   git clone https://github.com/GyeongcheolCho/BasicGSCA_Prime.git
+   git clone https://github.com/PsycheMatrica/GSCA.Basic_Prime.git
    ```
 2. Add the package to your MATLAB path:
    ```matlab
-    addpath(genpath('BasicGSCA_Prime'))
+    addpath(genpath('GSCA.Basic_Prime'))
    ```
 
 ## Usage:
@@ -32,8 +32,8 @@ To use this package in MATLAB:
 - Likely compatible with earlier MATLAB versions.
 
 ### Citation (APA):
-- If you use **BasicGSCA_Prime** in your research or publications, please cite it in APA format as follows:
+- If you use **GSCA.Basic_Prime** in your research or publications, please cite it in APA format as follows:
 
 ```plaintext
-Cho, G. (2024). BasicGSCA_Prime: A package for basic generalized structured component analysis [Computer software]. GitHub. https://github.com/GyeongcheolCho/BasicGSCA_Prime
+Cho, G. (2024). GSCA.Basic_Prime: A package for basic generalized structured component analysis [Computer software]. GitHub. https://github.com/PsycheMatrica/GSCA.Basic_Prime
 ```
