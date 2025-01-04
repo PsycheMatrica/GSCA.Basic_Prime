@@ -1,9 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Illustration for BasicGSCA Prime package                                %
+% Illustration for GSCA.Basic_Prime package                                %
 %   Author: Gyeongcheol Cho                                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Description:                                                            %
-%   - This code aims to illustrate how to use BasicGSCA Prime package.    %
+%   - This code aims to illustrate how to use GSCA.Basic_Prime package.    %
 %   - The dataset is a replica of the ACSI data used in Cho & Hwang       %
 %     (2024).                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
