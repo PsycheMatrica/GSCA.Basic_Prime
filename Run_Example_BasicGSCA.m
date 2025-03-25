@@ -19,6 +19,9 @@
 help BasicGSCA()
 
 Data=readtable('ACSI_774_Replica.csv');
+
+%% If missing values are included 
+Z0=Data{:,:};
 W0=[1 1 1 0 0 0 0 0 0 0 0 0 0 0 ; ...
    0 0 0 1 1 1 0 0 0 0 0 0 0 0 ; ...
    0 0 0 0 0 0 1 1 0 0 0 0 0 0 ; ...
@@ -38,7 +41,8 @@ Max_iter = 1000;
 Min_limit = 10^(-8);
 Flag_C_Forced = true;
 Flag_Parallel = false;
-[INI,TABLE,ETC]=BasicGSCA(Data{:,:},W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel);
+Opt_Missing = 0;
+[INI,TABLE,ETC]=BasicGSCA(Z0,W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing);
 INI
 INI.GoF
 INI.Converge
@@ -53,3 +57,12 @@ TABLE.W
 TABLE.C
 TABLE.B
 ETC
+
+%% If missing values are included in data
+Percentage_deleted=.10;
+[N,J]=size(Z0);
+ind_missing=rand(N,J)<=Percentage_deleted;
+Z0_miss=Z0;
+Z0_miss(ind_missing)=NaN;
+Opt_Missing = 4; 
+[INI2,TABLE2,ETC2]=BasicGSCA(Z0_miss,W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing);

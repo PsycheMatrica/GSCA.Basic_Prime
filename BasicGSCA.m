@@ -1,11 +1,11 @@
-function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel)
+function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BasicGSCA() - MATLAB function to perform a basic version of Generalized %
 %               Structured Component Analysis (GSCA).                     %
 % Author: Gyeongcheol Cho                                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input arguments:                                                        %
-%   Data = an N by J matrix of scores for N individuals on J indicators   %
+%   Z0 = an N by J matrix of scores for N individuals on J indicators   %
 %   W = a J by P matrix of weight parameters                              %
 %   C = a P by J matrix of loading parameters                             %
 %   B = a P by P matrix of path coefficients                              %
@@ -26,6 +26,12 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
 %                   regardless of its value.                              %
 %   Flag_Parallel = Logical value to determine whether to use parallel    %
 %                   computing for bootstrapping                           %
+%   Opt_Missing = 0 for none                                              %
+%               = 1 for list-wise deletion                                %
+%               = 2 for mean imputation                                   %
+%               = 3 for pairwise correlation                              %
+%               = 4 for least-squares imputation                          %
+%       * Missing values in Z0 must be entered as NaN                     %
 % Output arguments:                                                       %
 %   INI: Structure array containing goodness-of-fit values, R-squared     % 
 %        values, and matrices parameter estimates                         %
@@ -55,20 +61,33 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% (1) Preliminary stage
-    if nargin<8; Flag_Parallel=false;
-        if nargin<7; Min_limit=10^(-8); 
-            if nargin<6; Max_iter=1000; 
-                if nargin<5; N_Boot=0; 
+    if nargin < 11; Opt_Missing=0;
+        if nargin<10; Flag_Parallel=false;
+            if nargin<9; Flag_C_Forced=false;
+                if nargin<8; Min_limit=10^(-8); 
+                    if nargin<7; Max_iter=1000; 
+                        if nargin<6; N_Boot=0; 
+                        end
+                    end
                 end
             end
         end
     end
-
-    Z=Data;  
-    [N,J]=size(Z);
+    [N,J]=size(Z0);
+    if Opt_Missing==1
+        ind_mat_nan=isnan(Z0);
+        loc_id_full=sum(ind_mat_nan,2)==0;
+        Z0=Z0(loc_id_full,:);
+        N=size(Z0,1);
+    elseif Opt_Missing>4
+        error('Enter the value of Opt_Missing as 0, 1, 2, or 3')            
+    end
     P=size(B,1);
     T=J+P;
-           
+    INI=struct;
+    TABLE=struct;
+    ETC=struct; 
+
     % index
     W0=W~=0; Nw=sum(sum(W0,1),2);
     C0=C~=0; Nc=sum(sum(C0,1),2);
@@ -94,7 +113,27 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
     % Setting the intital values for A,W    
         W(W0)=1;
 %% (3) Estimation of paramters
-    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,CVscore]=ALS_Basic(Z,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);      
+    Z=Z0;Flag_LS_Impute=false;
+    if Opt_Missing==2
+        ind_mat_nan=isnan(Z0);
+        for j=1:J; Z(ind_mat_nan(:,j),:)=mean(Z0(~ind_mat_nan(:,j),j),1); end
+    elseif Opt_Missing==3
+        Cov_Z=cov(Z0,"partialrows");
+        [Cov_Z_sq,flag]=chol(Cov_Z);
+        if flag>0; fprintf('The pairwise covariance matrix is not positive definite\n'); return; end
+        idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
+        Z=idt*Cov_Z_sq*sqrt(N);
+    elseif Opt_Missing==4
+        Flag_LS_Impute=true;
+    end
+    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,CVscore]=ALS_Basic(Z,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);
+    
+    if Opt_Missing==3
+        zm=mean(Z0,'omitnan');
+        z_sd=std(Z0,1,'omitmissing');
+        Z_std=((Z0-repmat(zm,[N,1]))./repmat(z_sd,[N,1])); 
+        CVscore=Z_std*est_W;
+    end
     R_squared_dep=ones(1,Ty_post)-vec_err;
     R_squared=zeros(1,T);
     R_squared(1,ind_Adep_post)=R_squared_dep;
@@ -110,7 +149,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
     INI.W=est_W;
     INI.C=est_C;
     INI.B=est_B;
-    INI.CVscore=CVscore*sqrt(N);
+    INI.CVscore=CVscore;
       
 %% (4) Estimation parameters for N_Boot
     if N_Boot<100
@@ -124,15 +163,30 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
         W_Boot=zeros(Nw,N_Boot);
         C_Boot=zeros(Nc_post,N_Boot);
         B_Boot=zeros(Nb,N_Boot);
-        delOPE_c_Boot=zeros(Nc,N_Boot);
-        delOPE_b_Boot=zeros(Nb,N_Boot);
+        %delOPE_c_Boot=zeros(Nc,N_Boot);
+        %delOPE_b_Boot=zeros(Nb,N_Boot);
         OPE_Boot=zeros(3,N_Boot);    
         if Flag_Parallel
             parfor b=1:N_Boot
-                [Z_ib,Z_oob]=GC_Boot(Z);
-                mean_Z_ib=mean(Z_ib);
-                std_Z_ib=std(Z_ib,1);
-                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                 [Z_ib,Z_oob]=GC_Boot(Z0);     
+                 mean_Z_ib=mean(Z_ib,'omitnan');
+                 std_Z_ib=std(Z_ib,1,'omitnan');
+                 if Opt_Missing==2
+                    ind_mat_nan=isnan(Z_ib);
+                    for j=1:J; Z_ib(ind_mat_nan(:,j),:)=mean(Z_ib(~ind_mat_nan(:,j),j),1); end
+                 elseif Opt_Missing==3
+                    Cov_Z_ib=cov(Z_ib,"partialrows");  
+                    [Cov_Z_ib_sq,flag]=chol(Cov_Z_ib);
+                    while flag>0
+                        [Z_ib,Z_oob]=GC_Boot(Z);
+                        Cov_Z_ib=cov(Z_ib,"partialrows"); 
+                        [Cov_Z_ib_sq,flag]=chol(Cov_Z_ib);
+                    end
+                    idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
+                    Z_ib=idt*Cov_Z_ib_sq*sqrt(N);
+                end     
+                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+             
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
                 B_Boot(:,b)=B_b(B0);
@@ -142,6 +196,14 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
                 %(4a-1) Scaling for Z_oob, est_W
                 N_oob=size(Z_oob,1);
                 Z_oob=(Z_oob-ones(N_oob,1)*mean_Z_ib)./(ones(N_oob,1)*std_Z_ib);
+                if Opt_Missing==2
+                    ind_mat_nan=isnan(Z_oob);
+                    for j=1:J; Z_oob(ind_mat_nan(:,j),:)=mean(Z_oob(~ind_mat_nan(:,j),j),1); end
+                elseif Opt_Missing==3 || Opt_Missing==4
+                    loc_case_nonmiss=sum(isnan(Z_oob),2)==0;
+                    Z_oob=Z_oob(loc_case_nonmiss,:);
+                    N_oob=size(Z_oob,1);
+                end
                 CV_oob=Z_oob*W_b;             
                 %(4a-2) to estimate Err(b)
                 e_oob=[Z_oob,CV_oob]-CV_oob*[C_b,B_b];
@@ -156,20 +218,36 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
                 sum_em_dep_oob = sum(em_dep_oob,2);
                 sum_es_dep_oob = sum(es_dep_oob,2);
                 OPE_Boot(:,b)=[(sum_em_dep_oob+sum_es_dep_oob)/Ty;sum_em_dep_oob/Jy;sum_es_dep_oob/Py]; % Error_oob for the measurement model
-
+                %{
                 [delOPE_c_Boot(:,b),delOPE_b_Boot(:,b)]=Gen_delOPE(Z_oob,CV_oob, ...
-                                                                em_oob,es_oob, ...
-                                                                C_b,B_b,C0,B0, ...
-                                                                loc_c_t,loc_b_t,loc_Cdep,loc_Bdep, ...
-                                                                N_oob,Nc,Nb);
+                                                                   em_oob,es_oob, ...
+                                                                   C_b,B_b,C0,B0, ...
+                                                                   loc_c_t,loc_b_t,loc_Cdep,loc_Bdep, ...
+                                                                   N_oob,Nc,Nb);
+                %}
             end
         else
             for b=1:N_Boot
-                if rem(b,100)==1; fprintf("Bootstrapping %d\n", b); end
-                [Z_ib,Z_oob]=GC_Boot(Z);
-                mean_Z_ib=mean(Z_ib);
-                std_Z_ib=std(Z_ib,1);
-                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                 if rem(b,100)==1; fprintf("Bootstrapping %d\n", b); end
+                 [Z_ib,Z_oob]=GC_Boot(Z0);     
+                 mean_Z_ib=mean(Z_ib,'omitnan');
+                 std_Z_ib=std(Z_ib,1,'omitnan');
+                 if Opt_Missing==2
+                    ind_mat_nan=isnan(Z_ib);
+                    for j=1:J; Z_ib(ind_mat_nan(:,j),:)=mean(Z_ib(~ind_mat_nan(:,j),j),1); end
+                 elseif Opt_Missing==3
+                    Cov_Z_ib=cov(Z_ib,"partialrows");  
+                    [Cov_Z_ib_sq,flag]=chol(Cov_Z_ib);
+                    while flag>0
+                        [Z_ib,Z_oob]=GC_Boot(Z);
+                        Cov_Z_ib=cov(Z_ib,"partialrows"); 
+                        [Cov_Z_ib_sq,flag]=chol(Cov_Z_ib);
+                    end
+                    idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
+                    Z_ib=idt*Cov_Z_ib_sq*sqrt(N);
+                end     
+                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                           
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
                 B_Boot(:,b)=B_b(B0);
@@ -179,6 +257,14 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
                 %(4a-1) Scaling for Z_oob, est_W
                 N_oob=size(Z_oob,1);
                 Z_oob=(Z_oob-ones(N_oob,1)*mean_Z_ib)./(ones(N_oob,1)*std_Z_ib);
+                if Opt_Missing==2
+                    ind_mat_nan=isnan(Z_oob);
+                    for j=1:J; Z_oob(ind_mat_nan(:,j),:)=mean(Z_oob(~ind_mat_nan(:,j),j),1); end
+                elseif Opt_Missing==3 || Opt_Missing==4
+                    loc_case_nonmiss=sum(isnan(Z_oob),2)==0;
+                    Z_oob=Z_oob(loc_case_nonmiss,:);
+                    N_oob=size(Z_oob,1);
+                end
                 CV_oob=Z_oob*W_b;             
                 %(4a-2) to estimate Err(b)
                 e_oob=[Z_oob,CV_oob]-CV_oob*[C_b,B_b];
@@ -193,12 +279,13 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
                 sum_em_dep_oob = sum(em_dep_oob,2);
                 sum_es_dep_oob = sum(es_dep_oob,2);
                 OPE_Boot(:,b)=[(sum_em_dep_oob+sum_es_dep_oob)/Ty;sum_em_dep_oob/Jy;sum_es_dep_oob/Py]; % Error_oob for the measurement model
-
+                %{
                 [delOPE_c_Boot(:,b),delOPE_b_Boot(:,b)]=Gen_delOPE(Z_oob,CV_oob, ...
-                                                                em_oob,es_oob, ...
-                                                                C_b,B_b,C0,B0, ...
-                                                                loc_c_t,loc_b_t,loc_Cdep,loc_Bdep, ...
-                                                                N_oob,Nc,Nb);
+                                                                   em_oob,es_oob, ...
+                                                                   C_b,B_b,C0,B0, ...
+                                                                   loc_c_t,loc_b_t,loc_Cdep,loc_Bdep, ...
+                                                                   N_oob,Nc,Nb);
+                %}
             end
         end
 
@@ -213,8 +300,8 @@ function [INI,TABLE,ETC]=BasicGSCA(Data,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit
           
     % basic statistics for parameter
         TABLE.W=para_stat(est_W(W0),W_Boot,loc_CI,[]);
-        if (Jy>0)||Flag_C_Forced; TABLE.C=para_stat(est_C(C0_post),C_Boot,loc_CI,delOPE_c_Boot); end
-        if Py>0; TABLE.B=para_stat(est_B(B0),B_Boot,loc_CI,delOPE_b_Boot); end
+        if (Jy>0)||Flag_C_Forced; TABLE.C=para_stat(est_C(C0_post),C_Boot,loc_CI,[]); end
+        if Py>0; TABLE.B=para_stat(est_B(B0),B_Boot,loc_CI,[]); end
         ETC.W_Boot=W_Boot;
         ETC.C_Boot=C_Boot;
         ETC.B_Boot=B_Boot;        
@@ -239,6 +326,7 @@ function [in_sample,out_sample,index,N_oob]=GC_Boot(Data)
     out_sample=Data(index_oob,:);
     N_oob=length(index_oob);
 end
+%{
 function [delOPE_c,delOPE_b]=Gen_delOPE(Z_oob,CV_oob, ...
                                          em_oob,es_oob, ...
                                          C_b,B_b,C0,B0, ...
@@ -280,3 +368,4 @@ function [delOPE_c,delOPE_b]=Gen_delOPE(Z_oob,CV_oob, ...
         end
     end
 end
+%}
