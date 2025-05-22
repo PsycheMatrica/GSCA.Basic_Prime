@@ -1,4 +1,4 @@
-function [W,C,B,vec_err,Flag_Converge,iter,CVr]=ALS_Basic(Z,Flag_LS,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep)
+function [W,C,B,vec_err,Flag_Converge,iter,Z,CVr]=ALS_Basic(Z,Flag_LS,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ALS_Basic() - MATLAB function to implement the basic ALS algorithm for  %
 %               Generalized Structured Component Analysis (GSCA).         %
@@ -131,6 +131,7 @@ end
  if Flag_C_Forced
     loc_Cdep=1:J;
     C0=C0_post;
+    Jy=J;
  end
  [C,B]=Estimation_A(Zr,CVr,C,B,C0,B0,loc_Cdep,loc_Bdep,Jy,Py);
  

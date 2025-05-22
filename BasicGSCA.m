@@ -48,6 +48,8 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
 %     .W: a J by P matrix of weight estimates                             %
 %     .C: a P by J matrix of loading estimates                            %
 %     .B: a P by P matrix of path coefficient estimates                   %
+%     .Z_imputed: an N by J matrix of imputed scores of standardized      %
+%                 indicators                                              %
 %     .CVscore: an N by P matrix of component scores                      %
 %  TABLE: Structure array containing tables of parameter estimates, their %
 %         SEs, 95% CIs,and other statistics                               %
@@ -126,7 +128,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
     elseif Opt_Missing==4
         Flag_LS_Impute=true;
     end
-    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,CVscore]=ALS_Basic(Z,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);
+    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,Zimp,CVscore]=ALS_Basic(Z,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);
     
     if Opt_Missing==3
         zm=mean(Z0,'omitnan');
@@ -149,6 +151,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
     INI.W=est_W;
     INI.C=est_C;
     INI.B=est_B;
+    INI.Z_imputed=Zimp;
     INI.CVscore=CVscore;
       
 %% (4) Estimation parameters for N_Boot
@@ -185,7 +188,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
                     idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
                     Z_ib=idt*Cov_Z_ib_sq*sqrt(N);
                 end     
-                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
              
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
@@ -246,7 +249,7 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
                     idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
                     Z_ib=idt*Cov_Z_ib_sq*sqrt(N);
                 end     
-                [W_b,C_b,B_b,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
                            
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
