@@ -1,4 +1,4 @@
-function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing)
+function Results=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BasicGSCA() - MATLAB function to perform a basic version of Generalized %
 %               Structured Component Analysis (GSCA).                     %
@@ -33,7 +33,11 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
 %               = 4 for least-squares imputation                          %
 %       * Missing values in Z0 must be entered as NaN                     %
 % Output arguments:                                                       %
-%   INI: Structure array containing goodness-of-fit values, R-squared     % 
+%   Results: Structure array containing (1) results from the original     %
+%       sample (INI); (2) summary tables with standard errors and         %
+%       confidence intervals (TABLE); and (3) bootstrap estimates for     %
+%       various parameter sets (ETC).                                     %                                                                  %
+%   .INI: Structure array containing goodness-of-fit values, R-squared    % 
 %        values, and matrices parameter estimates                         %
 %     .GoF = [FIT_D,   OPE_D;                                             %
 %             FIT_M_D, OPE_M_D;                                           %
@@ -51,12 +55,12 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
 %     .Z_imputed: an N by J matrix of imputed scores of standardized      %
 %                 indicators                                              %
 %     .CVscore: an N by P matrix of component scores                      %
-%  TABLE: Structure array containing tables of parameter estimates, their %
+%  .TABLE: Structure array containing tables of parameter estimates, their%
 %         SEs, 95% CIs,and other statistics                               %
 %     .W: Table for weight estimates                                      %
 %     .C: Table for loading estimates                                     %
 %     .B: Table for path coefficients estimates                           %
-%  ETC: Structure array including bootstrapped parameter estmates         %
+%  .ETC: Structure array including bootstrapped parameter estmates         %
 %     .W_Boot: Matrix of bootstrapped weight estimates                    %
 %     .C_Boot: Matrix of bootstrapped loading estimates                   %
 %     .B_Boot: Matrix of bootstrapped path coefficient estimates          %
@@ -309,6 +313,10 @@ function [INI,TABLE,ETC]=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,F
         ETC.C_Boot=C_Boot;
         ETC.B_Boot=B_Boot;        
     end
+    Results.INI=INI;
+    Results.TABLE=TABLE;
+    Results.ETC=ETC;
+    
 end
 function Table=para_stat(est_mt,boot_mt,CI_mp,delOPE_p_q_Boot)
     flag_pet = true;

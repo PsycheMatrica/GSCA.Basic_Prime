@@ -42,7 +42,11 @@ Min_limit = 10^(-8);
 Flag_C_Forced = true;
 Flag_Parallel = false;
 Opt_Missing = 0;
-[INI,TABLE,ETC]=BasicGSCA(Z0,W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing);
+Results=BasicGSCA(Z0,W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing);
+INI=Results.INI;
+TABLE=Results.TABLE;
+ETC=Results.ETC;
+
 INI
 INI.GoF
 INI.Converge
@@ -65,4 +69,22 @@ ind_missing=rand(N,J)<=Percentage_deleted;
 Z0_miss=Z0;
 Z0_miss(ind_missing)=NaN;
 Opt_Missing = 4; 
-[INI2,TABLE2,ETC2]=BasicGSCA(Z0_miss,W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing);
+Results=BasicGSCA(Z0_miss,W0,C0,B0,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing);
+INI=Results.INI;
+TABLE=Results.TABLE;
+ETC=Results.ETC;
+
+INI
+INI.GoF
+INI.Converge
+INI.iter
+INI.W
+INI.C
+INI.B
+INI.R2_m
+INI.R2_s
+TABLE
+TABLE.W
+TABLE.C
+TABLE.B
+ETC
