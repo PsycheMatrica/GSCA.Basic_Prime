@@ -1,6 +1,6 @@
-function Results=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing)
+function Results=GSCA_Basic(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Forced,Flag_Parallel,Opt_Missing)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% BasicGSCA() - MATLAB function to perform a basic version of Generalized %
+% GSCA_Basic() - MATLAB function to perform a basic version of Generalized %
 %               Structured Component Analysis (GSCA).                     %
 % Author: Gyeongcheol Cho                                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,8 +36,8 @@ function Results=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Fo
 %   Results: Structure array containing (1) results from the original     %
 %       sample (INI); (2) summary tables with standard errors and         %
 %       confidence intervals (TABLE); and (3) bootstrap estimates for     %
-%       various parameter sets (ETC).                                     %                                                                  %
-%   .INI: Structure array containing goodness-of-fit values, R-squared    % 
+%       various parameter sets (ETC).                                     %      
+%   .INI: Structure array containing goodness-of-fit values, R-squared    %
 %        values, and matrices parameter estimates                         %
 %     .GoF = [FIT_D,   OPE_D;                                             %
 %             FIT_M_D, OPE_M_D;                                           %
@@ -132,7 +132,10 @@ function Results=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Fo
     elseif Opt_Missing==4
         Flag_LS_Impute=true;
     end
-    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,Zimp,CVscore]=ALS_Basic(Z,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);
+    [est_W,est_C,est_B,vec_err,Flag_Converge,iter,Zimp,CVscore]=...
+        ALS_GSCA_Basic(Z,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,...
+                    Min_limit,Max_iter,Flag_C_Forced,C0_post,...
+                    N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);
     
     if Opt_Missing==3
         zm=mean(Z0,'omitnan');
@@ -192,7 +195,7 @@ function Results=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Fo
                     idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
                     Z_ib=idt*Cov_Z_ib_sq*sqrt(N);
                 end     
-                [W_b,C_b,B_b,~,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~,~,~]=ALS_GSCA_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
              
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
@@ -253,7 +256,7 @@ function Results=BasicGSCA(Z0,W,C,B,ind_sign,N_Boot,Max_iter,Min_limit,Flag_C_Fo
                     idt=randn(N,J); idt=idt-mean(idt); DD=(idt'*idt); [v,x]=eig(DD); idt=idt*(v*inv(x).^(1/2)*v');
                     Z_ib=idt*Cov_Z_ib_sq*sqrt(N);
                 end     
-                [W_b,C_b,B_b,~,~,~,~,~]=ALS_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
+                [W_b,C_b,B_b,~,~,~,~,~]=ALS_GSCA_Basic(Z_ib,Flag_LS_Impute,W,W0,C0,B0,ind_sign,ind_Adep,ind_Adep_post,Min_limit,Max_iter,Flag_C_Forced,C0_post,N,J,P,T,Jy,Py,loc_Cdep,loc_Bdep);            
                            
                 W_Boot(:,b)=W_b(W0);
                 C_Boot(:,b)=C_b(C0_post);
